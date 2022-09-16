@@ -7,23 +7,35 @@ export default function makeContacts() { return okResult(new Contacts()); }
 /** holds the contacts for different users */
 class Contacts {
   //TODO: add instance fields if necessary
-  
   /** return an instance of UserContacts */
+  
+  #userMap = new Map();  
+  
   userContacts(userId) {
     //TODO: fix to ensure same object returned for same userId
-    return okResult(new UserContacts(userId));
+    return okResult(this.#userMap.get(userId));
   }
-  
 }
 
 /** holds the contacts for single user specified by userId */
 class UserContacts {
   //TODO: add instance fields if necessary
 
+  #counter;
+
   constructor(userId) {
     this.userId = userId;
+    this.#counter = 0;
+    this.contactMap = new Map();
   }
   
+  generateId(){
+    let new_id = new ID;
+    let random = Math.floor(Math.random()*100);
+    new_id = `${this.#counter}_${random}`;
+    this.#counter += 1;
+    return new_id;
+  }
 
   /** Add object contact into this under a new contactId and return
    *  Result<contactId>.  The contact must have a name field which
@@ -37,7 +49,9 @@ class UserContacts {
    *             Contact contains an id property
    */
   create(contact) {
-    return okResult('TODO');
+    new_id = this.generateId();
+    this.contactMap.add(new_id, contact);
+    return okResult(new_id);
   }
 
   /** Return XContact for contactId.
