@@ -9,11 +9,18 @@ class Contacts {
   //TODO: add instance fields if necessary
   /** return an instance of UserContacts */
   
-  #userMap = new Map();  
+  #contactsMap = new Map();  
   
   userContacts(userId) {
     //TODO: fix to ensure same object returned for same userId
-    return okResult(this.#userMap.get(userId));
+    if(this.#contactsMap.has(userId)){
+      return okResult(this.#contactsMap.get(userId));
+    }
+    else{
+      const temp_user = new UserContacts(userId);
+      this.#contactsMap.set(userId, temp_user);
+      return okResult(this.#contactsMap.get(userId));
+    }
   }
 }
 
@@ -22,17 +29,17 @@ class UserContacts {
   //TODO: add instance fields if necessary
 
   #counter;
+  #contactMap
 
   constructor(userId) {
     this.userId = userId;
     this.#counter = 0;
-    this.contactMap = new Map();
+    this.#contactMap = new Map();
   }
   
   generateId(){
-    let new_id = new ID;
     let random = Math.floor(Math.random()*100);
-    new_id = `${this.#counter}_${random}`;
+    let new_id = `${this.#counter}_${random}`;
     this.#counter += 1;
     return new_id;
   }
@@ -49,8 +56,14 @@ class UserContacts {
    *             Contact contains an id property
    */
   create(contact) {
-    new_id = this.generateId();
-    this.contactMap.add(new_id, contact);
+    if(this.prefix(contact.name) === []){
+      return errResult("Name is not proper string", {code: 'BAD_REQ'});
+    }
+    if(contact.id){
+      return errResult("Contact cannot have ID already", {code: 'BAD_REQ'});
+    }
+    let new_id = this.generateId();
+    this.#contactMap.set(new_id, contact);
     return okResult(new_id);
   }
 
@@ -62,7 +75,16 @@ class UserContacts {
    *    NOT_FOUND: no contact for contactId
    */
   read(contactId) {
-    return okResult('TODO');
+    if(this.#contactMap.has(contactId)){
+      const ret = this.deepCopy(this.#contactMap.get(contactId));
+      return okResult(ret);
+    }
+    else if(typeof contactId !== 'string'){
+      return errResult('contactId is not a string', {code: "BAD_REQ"});
+    }
+    else{
+      return errResult('contactId not found', {code: 'NOT_FOUND'});
+    }
   }
 
   /** search for contact by zero or more of the following fields in params:
@@ -81,15 +103,53 @@ class UserContacts {
    *             a valid Email address
    */
   search({id, nameWordPrefix, email}={}, startIndex=0, count=5) {
-    return okResults(['TODO']);
+    let deep_arr
+    if(nameWordPrefix && this.prefix() === []){
+      return errResult("Name is not proper string", {code: 'BAD_REQ'});
+    }
+    if(!id && !nameWordPrefix && !email){
+      deep_arr = Array.from(this.#contactMap.values());
+      deep_arr.map(c => c = this.deepCopy(c));
+    }
+
+    deep_arr = deep_arr.slice(startIndex, startIndex+count);
+    deep_arr.map(c => c = this.deepCopy(c));
+    return okResult(deep_arr);
   }
 
   //TODO: define auxiliary methods
+  //Deep copy strategy taken from url:
+  //https://code.tutsplus.com/articles/the-best-way-to-deep-copy-an-object-in-javascript--cms-39655
 
+  deepCopy(my_object){
+    const copy = {...my_object};
+    return copy;
+  }
+  
+  prefix(my_string){
+    if(my_string === undefined){
+      return "";
+    }
+    let prefixes = new Array();
+    let sub_strings = my_string.split(" ");
+
+    sub_strings.map(s => s.replace(/[^A-Za-z0-9]/g, ''));
+
+    for(const sub of sub_strings){
+      for(let i = 2; i < sub.length+1; i++){
+        prefixes.push(sub.substring(0, i));
+      }
+    }
+    return prefixes;
+  }
 }
 
 
 //TODO: define auxiliary functions and classes.
+
+class index{
+
+}
 
 // non-destructive implementations of set operations which may be useful
 function setIntersection(setA, setB) {

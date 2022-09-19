@@ -24,7 +24,7 @@ describe('Contacts', () => {
     }
   });
 
-  it ('must retrieve previously created contacts', () => {
+  it.only ('must retrieve previously created contacts', () => {
     const contacts = [];
     for (const id of ids) {
       const contactResult = userContacts.read(id);
@@ -36,7 +36,7 @@ describe('Contacts', () => {
     expect(contacts).to.deep.equal(CONTACTS);
   });
 
-  it ('retrieving a contact with a non-existing id must error NOT_FOUND', () => {
+  it.only ('retrieving a contact with a non-existing id must error NOT_FOUND', () => {
     const contacts = [];
     const id = ids[0] + 'x';
     const contactResult = userContacts.read(id);
@@ -44,13 +44,13 @@ describe('Contacts', () => {
     expect(contactResult.errors[0].options.code).to.equal('NOT_FOUND');
   });
 
-  it ('retrieving a contact with an undefined id must error BAD_REQ', () => {
+  it.only ('retrieving a contact with an undefined id must error BAD_REQ', () => {
     const contactResult = userContacts.read();
     expect(contactResult.errors).to.not.be.undefined;
     expect(contactResult.errors[0].options.code).to.equal('BAD_REQ');
   });
 
-  it ('creating a contact with an id must error BAD_REQ', () => {
+  it.only ('creating a contact with an id must error BAD_REQ', () => {
     const contact = CONTACTS[0];
     const create = { id: 'xxx', ...contact };
     const contactResult = userContacts.create(create);
@@ -58,7 +58,7 @@ describe('Contacts', () => {
     expect(contactResult.errors[0].options.code).to.equal('BAD_REQ');
   });
 
-  it ('contacts search without any options must retrieve all CONTACTS', () => {
+  it.only ('contacts search without any options must retrieve all CONTACTS', () => {
     const contactsResult = userContacts.search();
     expect(contactsResult.errors).to.be.undefined;
     const contacts = contactsResult.val
@@ -66,7 +66,7 @@ describe('Contacts', () => {
     expect(contacts).to.deep.equal(CONTACTS);
   });
 
-  it ('contacts search must start search at index', () => {
+  it.only ('contacts search must start search at index', () => {
     const index = 3;
     const contactsResult = userContacts.search({}, index);
     expect(contactsResult.errors).to.be.undefined;
@@ -75,7 +75,7 @@ describe('Contacts', () => {
     expect(contacts).to.deep.equal(CONTACTS.slice(index));
   });
 
-  it ('contacts search must return count results starting at index', () => {
+  it.only ('contacts search must return count results starting at index', () => {
     const index = 2;
     const count = 2;
     const contactsResult = userContacts.search({}, index, count);
@@ -150,7 +150,7 @@ describe('Contacts', () => {
     expect(contacts).to.have.lengthOf(0);
   });
 
-  it ('retrieved contact must not share structure with stored contact', () => {
+  it.only ('retrieved contact must not share structure with stored contact', () => {
     const index = 0;
     const id = ids[index];
     const contactResult = userContacts.read(id);

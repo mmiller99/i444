@@ -19,6 +19,8 @@
     "mocha": "^10.0.0"
   },
   "dependencies": {
+    "cs544-js-utils": "https://sunybing:sunybing@zdu.binghamton.edu/cs544/lib/js-utils/cs544-js-utils-1.0.0.tgz",
+    "cs544-node-utils": "https://sunybing:sunybing@zdu.binghamton.edu/cs544/lib/node-utils/cs544-node-utils-1.0.0.tgz",
     "utils": "^0.3.1"
   }
 }
