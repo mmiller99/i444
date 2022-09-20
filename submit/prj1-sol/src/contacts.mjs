@@ -29,12 +29,14 @@ class UserContacts {
   //TODO: add instance fields if necessary
 
   #counter;
-  #contactMap
+  #contactMap;
+  #indexMap;
 
   constructor(userId) {
     this.userId = userId;
     this.#counter = 0;
     this.#contactMap = new Map();
+    this.#indexMap = new Index();
   }
   
   generateId(){
@@ -56,13 +58,24 @@ class UserContacts {
    *             Contact contains an id property
    */
   create(contact) {
-    if(this.prefix(contact.name) === []){
+    let prefixes = this.prefix(contact.name);
+    
+    //ERROR CHECKING
+    if(prefixes === []){
       return errResult("Name is not proper string", {code: 'BAD_REQ'});
     }
     if(contact.id){
       return errResult("Contact cannot have ID already", {code: 'BAD_REQ'});
     }
+
+    //Add prefixes to index;
     let new_id = this.generateId();
+
+    if(contact.emails){
+      this.#indexMap.addEmail(contact.emails, new_id);
+    }
+    this.#indexMap.addPrefixes(prefixes, new_id);
+
     this.#contactMap.set(new_id, contact);
     return okResult(new_id);
   }
@@ -103,13 +116,38 @@ class UserContacts {
    *             a valid Email address
    */
   search({id, nameWordPrefix, email}={}, startIndex=0, count=5) {
-    let deep_arr
+    let deep_arr = [];
     if(nameWordPrefix && this.prefix() === []){
       return errResult("Name is not proper string", {code: 'BAD_REQ'});
     }
     if(!id && !nameWordPrefix && !email){
       deep_arr = Array.from(this.#contactMap.values());
       deep_arr.map(c => c = this.deepCopy(c));
+    }
+
+    if(nameWordPrefix){
+      let fixedPrefix = nameWordPrefix.toLowerCase();
+      fixedPrefix = fixedPrefix.charAt(0).toUpperCase() + fixedPrefix.slice(1);
+      if(this.#indexMap.indexHas(fixedPrefix)){
+        const temp_set = this.#indexMap.indexGet(fixedPrefix);
+        for(const id of temp_set){
+          deep_arr.push(this.#contactMap.get(id));
+        }
+      }
+    }
+
+    if(email){
+      let fixedEmail = email.toLowerCase();
+      if(this.#indexMap.indexHas(email)){
+        const temp_set = this.#indexMap.indexGet(email);
+        for(const id of temp_set){
+          deep_arr.push(this.#contactMap.get(id));
+        }
+      }
+    }
+
+    if(id){
+      deep_arr.push(this.#contactMap.get(id));
     }
 
     deep_arr = deep_arr.slice(startIndex, startIndex+count);
@@ -147,8 +185,41 @@ class UserContacts {
 
 //TODO: define auxiliary functions and classes.
 
-class index{
+class Index{
+  constructor(){
+    this.indexMap = new Map();
+  }
 
+  addPrefixes(prefixes, new_id){
+    for(const pre of prefixes){
+      if(this.indexMap.has(pre)){
+        this.indexMap.get(pre).add(new_id);
+      }
+      else{
+        const my_set = new Set();
+        my_set.add(new_id);
+        this.indexMap.set(pre, my_set);
+      }
+    }
+  }
+  addEmail(new_emails, new_id){
+    for(const e of new_emails){
+      if(this.indexMap.has(e)){
+        this.indexMap.get(e).add(new_id);
+      }
+      else{
+        const my_set = new Set();
+        my_set.add(new_id);
+        this.indexMap.set(e, my_set);
+      }
+    }
+  }
+  indexHas(my_str){
+    return this.indexMap.has(my_str);
+  }
+  indexGet(my_str){
+    return this.indexMap.get(my_str);
+  }
 }
 
 // non-destructive implementations of set operations which may be useful
