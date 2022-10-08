@@ -22,8 +22,9 @@ const DEFAULT_COUNT = 5;
  *  For create(), the unknown request properties are stored.
  */
 class ContactsDao {
-  constructor(params) {
+  constructor(client) {
     //TODO
+    this.client = client;
   }
 
   /** Factory method to create a new instance of this 
@@ -33,9 +34,14 @@ class ContactsDao {
   static async make(dbUrl) {
     //TODO any setup code
     try {
-      return errResult('TODO', { code: 'TODO' });
+      const client = new MongoClient(dbUrl);
+      await client.connect();
+      const db = client.db();
+      const client_dao = new ContactsDao(client);
+      return okResult(client_dao);
     }
     catch (error) {
+      this.client.close();
       console.error(error);
       return errResult(error.message, { code: 'DB' });
     }
@@ -51,7 +57,7 @@ class ContactsDao {
   async close() { 
     //TODO any setup code
     try {
-      return errResult('TODO', { code: 'TODO' });
+      this.client.close();
     }
     catch (e) {
       console.error(e);
