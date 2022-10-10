@@ -22,6 +22,7 @@ const DEFAULT_COUNT = 5;
  *  For create(), the unknown request properties are stored.
  */
 class ContactsDao {
+  db;
   constructor(client) {
     //TODO
     this.client = client;
@@ -36,7 +37,8 @@ class ContactsDao {
     try {
       const client = new MongoClient(dbUrl);
       await client.connect();
-      const db = client.db();
+      db = client.db();
+
       const client_dao = new ContactsDao(client);
       return okResult(client_dao);
     }
@@ -47,6 +49,18 @@ class ContactsDao {
     }
   }
 
+  async makeIndexes(property){
+    const collections = await(db.listCollections().toArray());
+    const exists = !!collections.find(c => c.name === property);
+    
+    if(exists){
+      await this.db.collection(NAME).createIndex(property);
+    }
+    else{
+      const options = {collation: {locale: 'en', strength: 2, }};
+      const collection = await db.createCollection(NAME, options);
+    }
+  }
 
   /** close off this DAO; implementing object is invalid after 
    *  call to close() 
@@ -161,9 +175,10 @@ class ContactsDao {
       return errResult(error.message, { code: 'DB' });
     }
   }
-  
- 
-  
+
+  async #nextId(){
+
+  }  
 }
 
 //TODO: add auxiliary functions and definitions as needed
