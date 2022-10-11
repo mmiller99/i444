@@ -22,10 +22,9 @@ const DEFAULT_COUNT = 5;
  *  For create(), the unknown request properties are stored.
  */
 class ContactsDao {
-  db;
-  constructor(client) {
+  constructor(params) {
     //TODO
-    this.client = client;
+    Object.assign(this, params);
   }
 
   /** Factory method to create a new instance of this 
@@ -34,31 +33,37 @@ class ContactsDao {
    */
   static async make(dbUrl) {
     //TODO any setup code
+    const params = {};
     try {
-      const client = new MongoClient(dbUrl);
-      await client.connect();
-      db = client.db();
+      params._client = await(new MongoClient(dbUrl)).connect();
+      const db = params._client.db();
+      const users = db.collection(USERS_COLLECTION);
+      const contacts = db.collection(CONTACTS_COLLECTION);
+      params.users = users;
+      params.contacts = contacts;
 
-      const client_dao = new ContactsDao(client);
-      return okResult(client_dao);
+      this.#makeIndexes();
+
+
+      return okResult(new ContactsDao(params));
     }
     catch (error) {
-      this.client.close();
       console.error(error);
       return errResult(error.message, { code: 'DB' });
     }
   }
 
-  async makeIndexes(property){
+  async #makeIndexes(){
     const collections = await(db.listCollections().toArray());
     const exists = !!collections.find(c => c.name === property);
     
     if(exists){
-      await this.db.collection(NAME).createIndex(property);
+      await db.collection(property).createIndex(property);
     }
     else{
       const options = {collation: {locale: 'en', strength: 2, }};
-      const collection = await db.createCollection(NAME, options);
+      const collection = await db.createCollection(property, options);
+      collection.createIndex(property);
     }
   }
 
@@ -71,7 +76,7 @@ class ContactsDao {
   async close() { 
     //TODO any setup code
     try {
-      this.client.close();
+      await this._client.close();
     }
     catch (e) {
       console.error(e);
@@ -88,7 +93,12 @@ class ContactsDao {
   async clearAll() {
     //TODO any setup code
     try {
-      return errResult('TODO', { code: 'TODO' });
+      const collection = this.users
+      const collections = await(users.find({}).toArray());
+      for(const c of collections){
+        this.clear(c._id);
+      }
+      return okResult(collections.length);
     }
     catch (error) {
       console.error(error);
@@ -103,7 +113,9 @@ class ContactsDao {
   async clear({userId}) {
     //TODO any setup code
     try {
-      return errResult('TODO', { code: 'TODO' });
+      const collection = this.contacts;
+      const delete_info = await collection.deleteMany({userId: {userId}});
+      return okResult(delete_info.result.n);
     }
     catch (error) {
       console.error(error);
@@ -125,7 +137,17 @@ class ContactsDao {
   async create(contact) {
     //TODO any setup code
     try {
-      return errResult('TODO', { code: 'TODO' });
+      if(contact._id){
+        return errResult("New contact cannot have id", { code: "BAD_REQ"});
+      }
+      const contactId = await this.#nextId();
+      const dbObj = {_id: contactId, ...contact};
+      const prefix_arr = namePrefixes(contact.name);
+      if(prefix_arr){
+        const collection = this.contacts;
+        await db.contacts.insertOne(dbObj);
+      }
+      return okResult(contactId);
     }
     catch (error) {
       console.error(error);
@@ -142,7 +164,10 @@ class ContactsDao {
   async read({userId, id}) {
     //TODO any setup code
     try {
-      return errResult('TODO', { code: 'TODO' });
+      const collection = this.contacts;
+      const dbEntry = await collection.find({"userId": userId, "contactId": id});
+
+      return okResult({id, ...dbEntry})
     }
     catch (error) {
       console.error(error);
@@ -177,7 +202,12 @@ class ContactsDao {
   }
 
   async #nextId(){
-
+    const query = { _id: NEXT_ID_KEY};
+    const update = { $inc: {[NEXT_ID_KEY]: 1}};
+    const options = { upsert: true, returnDocument: 'after'};
+    const ret = await this.contacts.findOneAndUpdate(query, update, options);
+    const seq = ret.value[next_id];
+    return String(seq) + Math.random().toFixed(10).replace(/^0\./, '_');
   }  
 }
 
