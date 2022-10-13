@@ -4,3 +4,6 @@ Email:		mmille60@binghamton.edu
 
 Add text here as needed.
 
+Not all tests pass.
+Search parameters are not queried together witch causes tests to fail.
+

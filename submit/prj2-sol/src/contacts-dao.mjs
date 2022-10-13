@@ -2,7 +2,7 @@ import assert from 'assert';
 
 import { namePrefixes } from './utils.mjs';
 import { okResult, errResult } from 'cs544-js-utils';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId} from 'mongodb';
 
 /** return a contacts dao for mongo URL dbUrl.  If there is previous contacts
  *  data at dbUrl, the returned dao should encompass that data.
@@ -37,33 +37,35 @@ class ContactsDao {
     try {
       params._client = await(new MongoClient(dbUrl)).connect();
       const db = params._client.db();
-      const users = db.collection(USERS_COLLECTION);
-      const contacts = db.collection(CONTACTS_COLLECTION);
+
+      const collections = await(db.listCollections().toArray());
+      const user_exists = !!collections.find(c => c.name === "users");
+      const contacts_exitst = !!collections.find(c => c.name === "contacts");
+      const options = {collation: {locale: 'en', strength: 2, }};
+      if(!user_exists){
+        
+        const collection = await db.createCollection("users", options);
+      }
+      if(contacts_exitst){
+        const collection = await db.collection("contacts");
+        await collection.createIndex({"emails":1});
+        await collection.createIndex({"prefix":1},options);
+      }
+      else{
+        const collection = await db.createCollection("contacts", options)
+        await collection.createIndex({"emails":1});
+        await collection.createIndex({"prefix":1},options);
+      }
+
+      const users = db.collection("users");
+      const contacts = db.collection("contacts");
       params.users = users;
       params.contacts = contacts;
-
-      this.#makeIndexes();
-
-
       return okResult(new ContactsDao(params));
     }
     catch (error) {
       console.error(error);
       return errResult(error.message, { code: 'DB' });
-    }
-  }
-
-  async #makeIndexes(){
-    const collections = await(db.listCollections().toArray());
-    const exists = !!collections.find(c => c.name === property);
-    
-    if(exists){
-      await db.collection(property).createIndex(property);
-    }
-    else{
-      const options = {collation: {locale: 'en', strength: 2, }};
-      const collection = await db.createCollection(property, options);
-      collection.createIndex(property);
     }
   }
 
@@ -93,12 +95,9 @@ class ContactsDao {
   async clearAll() {
     //TODO any setup code
     try {
-      const collection = this.users
-      const collections = await(users.find({}).toArray());
-      for(const c of collections){
-        this.clear(c._id);
-      }
-      return okResult(collections.length);
+      const collection = this.contacts;
+      const delete_info = await collection.deleteMany({});
+      return okResult(delete_info.deletedCount);
     }
     catch (error) {
       console.error(error);
@@ -114,8 +113,8 @@ class ContactsDao {
     //TODO any setup code
     try {
       const collection = this.contacts;
-      const delete_info = await collection.deleteMany({userId: {userId}});
-      return okResult(delete_info.result.n);
+      const delete_info = await collection.deleteMany({"userId": userId});
+      return okResult(delete_info.deletedCount);
     }
     catch (error) {
       console.error(error);
@@ -140,12 +139,12 @@ class ContactsDao {
       if(contact._id){
         return errResult("New contact cannot have id", { code: "BAD_REQ"});
       }
-      const contactId = await this.#nextId();
-      const dbObj = {_id: contactId, ...contact};
+      const contactId = new ObjectId().toHexString();
       const prefix_arr = namePrefixes(contact.name);
+      const dbObj = {"_id": contactId, "prefix":prefix_arr,...contact};
       if(prefix_arr){
         const collection = this.contacts;
-        await db.contacts.insertOne(dbObj);
+        await this.contacts.insertOne(dbObj);
       }
       return okResult(contactId);
     }
@@ -165,9 +164,15 @@ class ContactsDao {
     //TODO any setup code
     try {
       const collection = this.contacts;
-      const dbEntry = await collection.find({"userId": userId, "contactId": id});
+      const dbEntry = await (collection.findOne({"userId": userId, "_id": id}));
 
-      return okResult({id, ...dbEntry})
+      if(dbEntry){
+        delete dbEntry._id;
+        return okResult(dbEntry)
+      }
+      else{
+        return errResult("No contact for contactId id", {code: 'NOT_FOUND'});
+      }
     }
     catch (error) {
       console.error(error);
@@ -192,8 +197,25 @@ class ContactsDao {
    */
   async search({userId, id, prefix, email, index=0, count=DEFAULT_COUNT}={}) {
     //TODO any setup code
+    let ret_arr = [];
     try {
-      return errResult('TODO', { code: 'TODO' });
+      if(!id && !prefix && !email){
+        const cursor = await(this.contacts.find({"userId":userId}));
+        ret_arr = ret_arr.concat(await cursor.sort({name: 1}).skip(index).limit(count).toArray());
+      }
+      if(prefix){
+        const cursor = await(this.contacts.find({"userId":userId, "prefix":{$elemMatch:{$eq:prefix}}}));
+        ret_arr = ret_arr.concat(await cursor.sort({name: 1}).skip(index).limit(count).toArray());
+      }
+      if(email){
+        const cursor = await(this.contacts.find({"userId":userId, "emails":email}));
+        ret_arr = ret_arr.concat(await cursor.sort({name: 1}).skip(index).limit(count).toArray());
+      }
+      if(id){
+        const cursor = await(this.contacts.find({"userId":userId, "_id":id}));
+        ret_arr = ret_arr.concat(await cursor.sort({name: 1}).skip(index).limit(count).toArray());
+      }
+      return okResult(ret_arr);
     }
     catch (error) {
       console.error(error);
@@ -206,9 +228,11 @@ class ContactsDao {
     const update = { $inc: {[NEXT_ID_KEY]: 1}};
     const options = { upsert: true, returnDocument: 'after'};
     const ret = await this.contacts.findOneAndUpdate(query, update, options);
-    const seq = ret.value[next_id];
+    const seq = ret.value[NEXT_ID_KEY];
     return String(seq) + Math.random().toFixed(10).replace(/^0\./, '_');
   }  
 }
 
 //TODO: add auxiliary functions and definitions as needed
+
+const NEXT_ID_KEY = 'count';

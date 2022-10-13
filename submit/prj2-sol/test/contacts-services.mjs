@@ -33,7 +33,7 @@ describe('Contacts services', () => {
 
   describe ('DAO services', () => {
     
-    it ('must retrieve previously created contacts', async () => {
+    it.only ('must retrieve previously created contacts', async () => {
       const contacts = [];
       for (const id of userContactIds[USER_IDS[0]]) {
 	const contactResult = await services.read({userId: USER_IDS[0], id});
@@ -44,7 +44,7 @@ describe('Contacts services', () => {
       expect(contacts).to.deep.equal(CONTACTS);
     });
 
-    it ('must not retrieve contacts for a different userId', async () => {
+    it.only ('must not retrieve contacts for a different userId', async () => {
       for (const id of userContactIds[USER_IDS[0]]) {
 	const contactResult = await services.read({userId: USER_IDS[1], id});
 	expect(contactResult.errors).to.not.be.undefined;
@@ -52,7 +52,7 @@ describe('Contacts services', () => {
       }
     });
 
-    it ('must not retrieve any contacts after clearing all', async () => {
+    it.only ('must not retrieve any contacts after clearing all', async () => {
       const clearResult = await services.clearAll();
       expect(clearResult.errors).to.be.undefined;
       expect(clearResult.val).to.equal(CONTACTS.length * USER_IDS.length);
@@ -65,7 +65,7 @@ describe('Contacts services', () => {
       }
     });
 
-    it ('must not retrieve contacts cleared for userId', async () => {
+    it.only ('must not retrieve contacts cleared for userId', async () => {
       const clearResult = await services.clear({userId: USER_IDS[0]});
       expect(clearResult.errors).to.be.undefined;
       expect(clearResult.val).to.equal(CONTACTS.length);
@@ -85,7 +85,7 @@ describe('Contacts services', () => {
       expect(contacts).to.deep.equal(CONTACTS);
     });
 
-    it ('read contact with bad contact id must error NOT_FOUND', async () => {
+    it.only ('read contact with bad contact id must error NOT_FOUND', async () => {
       const contacts = [];
       const id = userContactIds[USER_IDS[0]][0] + 'x';
       const contactResult = await services.read({userId: USER_IDS[0], id});
@@ -93,22 +93,31 @@ describe('Contacts services', () => {
       expect(contactResult.errors[0].options.code).to.equal('NOT_FOUND');
     });
     
-    it ('read contact with bad userId must error NOT_FOUND', async () => {
-      expect('TODO').to.be.undefined;
+    it.only ('read contact with bad userId must error NOT_FOUND', async () => {
+      const contacts = [];
+      const badId = USER_IDS[0]+'x';
+      const id =userContactIds[USER_IDS[0]][0];
+      const contactResult = await services.read({userId: badId, id});
+      expect(contactResult.errors).to.not.be.undefined;
+      expect(contactResult.errors[0].options.code).to.equal('NOT_FOUND');
     });
     
-    it ('creating contact with _id property must error BAD_REQ', async () => {
-      expect('TODO').to.be.undefined;
+    it.only ('creating contact with _id property must error BAD_REQ', async () => {
+      const contact = {_id:"xxx",...CONTACTS[0]};
+      const userId = USER_IDS[0];
+      const idResult = await services.create({userId, ...contact});
+      expect(idResult.errors).to.not.be.undefined;
+      expect(idResult.errors[0].options.code).to.equal('BAD_REQ');
     });
 
-    it ('search without options must retrieve all contacts', async () => {
+    it.only ('search without options must retrieve all contacts', async () => {
       const contactsResult = await services.search({userId: USER_IDS[0],} );
       expect(contactsResult.errors).to.be.undefined;
       const contacts = contactsResult.val.map(cleanRetContact);
       expect(contacts).to.deep.equal(CONTACTS);
     });
 
-    it ('contacts search must start search at index', async () => {
+    it.only ('contacts search must start search at index', async () => {
       const index = 3;
       const contactsResult =
 	await services.search({userId: USER_IDS[0], index});
@@ -117,7 +126,7 @@ describe('Contacts services', () => {
       expect(contacts).to.deep.equal(CONTACTS.slice(index));
     });
 
-    it ('search must return count results starting at index', async () => {
+    it.only ('search must return count results starting at index', async () => {
       const index = 2;
       const count = 2;
       const contactsResult =
@@ -127,7 +136,7 @@ describe('Contacts services', () => {
       expect(contacts).to.deep.equal(CONTACTS.slice(index, index + count));
     });
 
-    it ('contacts search must search by first name word prefix', async () => {
+    it.only ('contacts search must search by first name word prefix', async () => {
       const prefix = 'que';
       const contactsResult =
 	await services.search({userId: USER_IDS[0], prefix});
@@ -136,7 +145,7 @@ describe('Contacts services', () => {
       expect(contacts).to.deep.equal(CONTACTS.slice(3, 4));
     });
 
-    it ('contacts search must search by last name word prefix', async () => {
+    it.only ('contacts search must search by last name word prefix', async () => {
       const prefix = 'go';
       const contactsResult =
 	await services.search({userId: USER_IDS[0], prefix});
@@ -145,7 +154,7 @@ describe('Contacts services', () => {
       expect(contacts).to.deep.equal(CONTACTS.slice(3, 4));
     });
     
-    it ('contacts search must retrieve multiple results', async () => {
+    it.only ('contacts search must retrieve multiple results', async () => {
       const prefix = 'john';
       const contactsResult =
 	await services.search({userId: USER_IDS[0], prefix});
@@ -154,7 +163,7 @@ describe('Contacts services', () => {
       expect(contacts).to.deep.equal([CONTACTS[0], CONTACTS[4]]);
     });
 
-    it ('contacts search must search by email', async () => {
+    it.only ('contacts search must search by email', async () => {
       const email = 'qgordon37@gmail.com';
       const contactsResult =
 	await services.search({userId: USER_IDS[0], email});
@@ -163,7 +172,7 @@ describe('Contacts services', () => {
       expect(contacts).to.deep.equal(CONTACTS.slice(3, 4));
     });
     
-    it ('contacts search must search by id', async () => {
+    it.only ('contacts search must search by id', async () => {
       const id = userContactIds[USER_IDS[0]][3];
       const contactsResult = await services.search({userId: USER_IDS[0], id});
       expect(contactsResult.errors).to.be.undefined;
@@ -181,7 +190,7 @@ describe('Contacts services', () => {
       expect(contacts).to.deep.equal(CONTACTS.slice(3, 4));
     });
     
-    it ('search with incorrect name prefix must return empty', async () => {
+    it.only ('search with incorrect name prefix must return empty', async () => {
       const prefix = 'QUEN';
       const contactsResult =
 	await services.search({userId: USER_IDS[0], prefix});
@@ -190,7 +199,7 @@ describe('Contacts services', () => {
       expect(contacts).to.have.lengthOf(0);
     });
 
-    it ('search with prefix and incorrect id must return empty', async () => {
+    it.only ('search with prefix and incorrect id must return empty', async () => {
       const prefix = 'QUE';
       const id = userContactIds[USER_IDS[0]][0];
       const contactsResult =
@@ -256,6 +265,6 @@ describe('Contacts services', () => {
 
 function cleanRetContact(contact) {
   const clean = { ...contact };
-  delete clean.id; delete clean.userId;
+  delete clean._id; delete clean.userId; delete clean.prefix;
   return clean;
 }
