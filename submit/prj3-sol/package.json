@@ -25,6 +25,8 @@
     "cs544-node-utils": "https://sunybing:sunybing@zdu.binghamton.edu/cs544/lib/node-utils/cs544-node-utils-1.0.0.tgz",
     "express": "^4.18.2",
     "http-status": "^1.5.3",
-    "mongodb": "^4.11.0"
+    "mongodb": "^4.11.0",
+    "mongodb-memory-server": "^8.9.5",
+    "supertest": "^6.3.1"
   }
 }

@@ -34,6 +34,12 @@ function setupRoutes(app) {
 
   //TODO: add routes here
 
+  app.get(`${base}/contacts/:userId/:contactId`, doQueryContact(app));
+  //app.get(`${base}/contacts/:userId`, doQueryUser(app));
+  //app.post(`${base}/contacts/:userId`, doCreateConctact(app));
+  //app.patch(`${base}/contacts/:userId/:contactId`, doUpdateContact(app));
+  //app.delete(`${base}/contacts/:userId/:contactId`, doDeleteContact(app));
+
   //must be last
   app.use(do404(app));
   app.use(doErrors(app));
@@ -43,6 +49,23 @@ function setupRoutes(app) {
 
 //TODO: add route handlers
 
+function doQueryContact(app){
+  return async function(req, res){
+  try{
+    const result = await app.locals.model.get(req.params);
+    if(result.hasErrors) throw result;
+    const userId = result.val.userId;
+    const contactId = result.val.contactId;
+    res.location(`${userId}/${contactId}`);
+    res.json(addSelfLinks(req, result.val, userId));
+  }
+  catch(err){
+    const mapped = mapResultErrors(err);
+    res.status(mapped.status).json(mapped);
+  }
+  }
+
+}
 
 /** Default handler for when there is no route for a particular method
  *  and path.
