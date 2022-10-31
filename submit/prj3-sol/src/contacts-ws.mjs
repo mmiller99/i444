@@ -8,6 +8,7 @@ import bodyParser from 'body-parser';
 import { okResult, errResult } from 'cs544-js-utils';
 
 import { DEFAULT_COUNT } from './defs.mjs';
+import { STATUS_CODES } from 'http';
 
 export default function serve(model, base='') {
   const app = express();
@@ -36,7 +37,7 @@ function setupRoutes(app) {
 
   app.get(`${base}/contacts/:userId/:contactId`, doQueryContact(app));
   //app.get(`${base}/contacts/:userId`, doQueryUser(app));
-  //app.post(`${base}/contacts/:userId`, doCreateConctact(app));
+  app.post(`${base}/contacts/:userId`, doCreateContact(app));
   //app.patch(`${base}/contacts/:userId/:contactId`, doUpdateContact(app));
   //app.delete(`${base}/contacts/:userId/:contactId`, doDeleteContact(app));
 
@@ -50,21 +51,39 @@ function setupRoutes(app) {
 //TODO: add route handlers
 
 function doQueryContact(app){
-  return async function(req, res){
-  try{
-    const result = await app.locals.model.get(req.params);
-    if(result.hasErrors) throw result;
-    const userId = result.val.userId;
-    const contactId = result.val.contactId;
-    res.location(`${userId}/${contactId}`);
-    res.json(addSelfLinks(req, result.val, userId));
-  }
-  catch(err){
-    const mapped = mapResultErrors(err);
-    res.status(mapped.status).json(mapped);
-  }
-  }
+  return (async function(req, res){
+    try{
+      const result = await app.locals.model.get(req.params);
+      if(result.hasErrors) throw result;
+      const userId = result.val.userId;
+      const contactId = result.val.contactId;
+      res.location(`${userId}/${contactId}`);
+      res.json(addSelfLinks(req, result.val, userId));
+    }
+    catch(err){
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+}
 
+function doCreateContact(app){
+  return (async function(req, res){
+    try{
+      console.log("try");
+      const contact = req.body;
+      const result = await app.locals.model(register(contact));
+      if(result.hasErrors) throw result;
+      const createdContact = result.val;
+      res.location(requestUrl(req)+createdContact.id);
+      res.status(STATUS.CREATED).json(selfResult(req, createdContact, 'POST'));
+    }
+    catch(err){
+      console.log("catch");
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
 }
 
 /** Default handler for when there is no route for a particular method
@@ -102,6 +121,10 @@ function doErrors(app) {
 function requestUrl(req) {
   const url = req.originalUrl.replace(/\/?(\?.*)?$/, '');
   return `${req.protocol}://${req.get('host')}${url}`;
+}
+
+function selfResult(req, result, method=undefined){
+  return { result, _links: { self: { href: queryUrl(req), method } } };
 }
 
 /** Return req URL with query params appended */
