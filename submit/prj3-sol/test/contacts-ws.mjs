@@ -173,7 +173,7 @@ describe('web services', () => {
 
   });
 
-  describe.only('update contacts', () => {
+  describe('update contacts', () => {
   
     it('must update contact', async () => {
       const contactInfo = CONTACTS[0];

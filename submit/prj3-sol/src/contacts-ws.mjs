@@ -36,7 +36,7 @@ function setupRoutes(app) {
   //TODO: add routes here
 
   app.get(`${base}/:userId/:contactId`, doQueryContact(app));
-  //app.get(`${base}/:userId`, doQueryUser(app));
+  app.get(`${base}/:userId`, doQueryUser(app));
   app.post(`${base}/:userId`, doCreateContact(app));
   app.patch(`${base}/:userId/:contactId`, doUpdateContact(app));
   app.delete(`${base}/:userId/:contactId`, doDeleteContact(app));
@@ -71,11 +71,13 @@ function doQueryUser(app){
   return (async function(req, res){
     try{
       const userId = req.params.userId;
-      const result = await app.locals.model.search({
-          "userId": userId,
-          ...req.params.prefix ? {"prefix":req.params.prefix} : null,
-          ...req.params.email ? {"email":req.params.email} : null});
+      const query = {...req.query};
+      if(query.index === undefined) query.index = 0;
+      if(query.count === undefined) query.count = DEFAULT_COUNT;
+      query.count++;
+      const result = await app.locals.model.search({"userId": userId, ...query});
       if(result.errors) throw result;
+      res.json(addPagingLinks(req, result.val));
 
     }
     catch(err){
