@@ -35,11 +35,11 @@ function setupRoutes(app) {
 
   //TODO: add routes here
 
-  app.get(`${base}/contacts/:userId/:contactId`, doQueryContact(app));
-  //app.get(`${base}/contacts/:userId`, doQueryUser(app));
-  app.post(`${base}/contacts/:userId`, doCreateContact(app));
-  //app.patch(`${base}/contacts/:userId/:contactId`, doUpdateContact(app));
-  //app.delete(`${base}/contacts/:userId/:contactId`, doDeleteContact(app));
+  app.get(`${base}/:userId/:contactId`, doQueryContact(app));
+  //app.get(`${base}/:userId`, doQueryUser(app));
+  app.post(`${base}/:userId`, doCreateContact(app));
+  app.patch(`${base}/:userId/:contactId`, doUpdateContact(app));
+  app.delete(`${base}/:userId/:contactId`, doDeleteContact(app));
 
   //must be last
   app.use(do404(app));
@@ -53,12 +53,12 @@ function setupRoutes(app) {
 function doQueryContact(app){
   return (async function(req, res){
     try{
-      const result = await app.locals.model.get(req.params);
-      if(result.hasErrors) throw result;
-      const userId = result.val.userId;
-      const contactId = result.val.contactId;
+      const userId = req.params.userId;
+      const contactId = req.params.contactId;
+      const result = await app.locals.model.read({"userId": userId, "id": contactId});
+      if(result.errors) throw result;
       res.location(`${userId}/${contactId}`);
-      res.json(addSelfLinks(req, result.val, userId));
+      res.json(addSelfLinks(req, result.val));
     }
     catch(err){
       const mapped = mapResultErrors(err);
@@ -67,23 +67,78 @@ function doQueryContact(app){
   });
 }
 
-function doCreateContact(app){
+function doQueryUser(app){
   return (async function(req, res){
     try{
-      console.log("try");
-      const contact = req.body;
-      const result = await app.locals.model(register(contact));
-      if(result.hasErrors) throw result;
-      const createdContact = result.val;
-      res.location(requestUrl(req)+createdContact.id);
-      res.status(STATUS.CREATED).json(selfResult(req, createdContact, 'POST'));
+      const userId = req.params.userId;
+      const result = await app.locals.model.search({
+          "userId": userId,
+          ...req.params.prefix ? {"prefix":req.params.prefix} : null,
+          ...req.params.email ? {"email":req.params.email} : null});
+      if(result.errors) throw result;
+
     }
     catch(err){
-      console.log("catch");
       const mapped = mapResultErrors(err);
       res.status(mapped.status).json(mapped);
     }
   });
+}
+
+function doUpdateContact(app){
+  return (async function(req, res){
+    try{
+      const userId = req.params.userId;
+      const contactId = req.params.contactId;
+      const updates = req.body;
+      const result = await app.locals.model.update({"userId": userId, "id": contactId, ...updates});
+      if(result.errors) throw result;
+      res.location(`${userId}/${contactId}`);
+      res.json(addSelfLinks(req, result.val));
+    }
+    catch(err){
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+}
+
+  
+
+function doCreateContact(app){
+  return (async function(req, res){
+    try{
+      const my_userId = req.params;
+      const contact = req.body;
+      const result = await app.locals.model.create({...my_userId, ...contact});
+      if(result.errors) throw result;
+      const createdContact = result.val;
+      const send = requestUrl(req)+"/"+createdContact;
+      res.location(send);
+      res.status(STATUS.CREATED).json(selfResult(req, createdContact, 'POST'));
+    }
+    catch(err){
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+}
+
+function doDeleteContact(app){
+  return (async function(req, res){
+    try{
+      const userId = req.params.userId;
+      const contactId = req.params.contactId;
+      const result = await app.locals.model.delete({"userId": userId, "id": contactId});
+      if(result.errors) throw result;
+      res.location(`${userId}/${contactId}`);
+      res.status(STATUS.NO_CONTENT).json(selfResult(req, undefined, 'DELETE'));
+    }
+    catch(err){
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  })
 }
 
 /** Default handler for when there is no route for a particular method

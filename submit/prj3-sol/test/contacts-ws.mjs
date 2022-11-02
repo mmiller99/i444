@@ -53,7 +53,7 @@ describe('web services', () => {
 
   describe('create/read contacts', () => {
   
-    it.only('must create contact with location', async () => {
+    it('must create contact with location', async () => {
       const userId = USER_IDS[0];
       const res = await createContact(userId, CONTACTS[0]);
       expect(res.status).to.equal(STATUS.CREATED);
@@ -173,7 +173,7 @@ describe('web services', () => {
 
   });
 
-  describe('update contacts', () => {
+  describe.only('update contacts', () => {
   
     it('must update contact', async () => {
       const contactInfo = CONTACTS[0];
