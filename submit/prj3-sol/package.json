@@ -1,0 +1,32 @@
+{
+  "name": "prj3-sol",
+  "version": "1.0.0",
+  "description": "Name:\t\tMiles Miller B-Number:\tB00723886 Email:\t\tmmille60@bingamton.edu",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha test/",
+    "debug-test": "mocha --inspect_brk test/",
+    "syntax-check": "shopt -s globstar: for f in **/*.mjs do node -c $f; done;"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "chai": "^4.3.6",
+    "mocha": "^10.1.0"
+  },
+  "dependencies": {
+    "contacts-dao": "https://sunybing:sunybing@zdu.binghamton.edu/cs544/lib/contacts-dao/contacts-dao-1.0.0.tgz",
+    "cors": "^2.8.5",
+    "cs544-js-utils": "https://sunybing:sunybing@zdu.binghamton.edu/cs544/lib/js-utils/cs544-js-utils-1.1.0.tgz",
+    "cs544-node-utils": "https://sunybing:sunybing@zdu.binghamton.edu/cs544/lib/node-utils/cs544-node-utils-1.0.0.tgz",
+    "express": "^4.18.2",
+    "http-status": "^1.5.3",
+    "mongodb": "^4.11.0",
+    "mongodb-memory-server": "^8.9.5",
+    "supertest": "^6.3.1"
+  }
+}
