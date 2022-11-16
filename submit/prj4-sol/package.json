@@ -1,0 +1,27 @@
+{
+  "dependencies": {
+    "cs544-js-utils": "https://sunybing:sunybing@zdu.binghamton.edu/cs544/lib/js-utils/cs544-js-utils-1.0.0.tgz",
+    "cs544-node-utils": "https://sunybing:sunybing@zdu.binghamton.edu/cs544/lib/node-utils/cs544-node-utils-1.0.0.tgz"
+  },
+  "name": "prj4-sol",
+  "description": "Name:\t\tMiles Miller B-Number:\tB00723886 Email:\t\tmmille60@binghamton.edu",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {
+    "chai": "^4.3.7",
+    "mocha": "^10.1.0",
+    "parcel": "^2.8.0"
+  },
+  "scripts": {
+    "start": "parcel src/index.html  --port 2346",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "syntax-check": "shopt -s globstar; for f in **/*.mjs; do node -c $f; done;"
+  },
+  "type": "module",
+  "browserslist": [
+    "since 2022-08"
+  ],
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
