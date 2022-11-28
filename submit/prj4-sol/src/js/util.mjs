@@ -14,4 +14,28 @@ import { Result, okResult, errResult } from 'cs544-js-utils';
  */
 export async function doFetchJson(method, url, jsonBody=undefined) {
   //TODO
+  try{
+    const response = await fetch(url, {
+      method: method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(jsonBody)});
+    if(response.content-length !== 0){
+      const data = await response.json();
+      if(data.errors){
+        return errResult({status: 400, errors: [{ message: "Could not retrieve data"}]});
+      }
+      else{
+        return okResult(data);
+      }
+    }
+    else{
+      return okResult();
+    }
+  }
+  catch(err){
+    return errResult(err);
+  }
+  
 }

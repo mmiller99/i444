@@ -14,44 +14,45 @@
       <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 
       <!-- error messages should be inserted as <li>message</li> in here -->
-      <ul id="errors" class="errors"></ul>
+    	<ul id="errors" class="errors"></ul>
       
-      <div class="search">
+    	<div class="search">
 
 	<!-- search form -->
-	<label for="search"><slot name="label">Search</slot></label>
-	<input id="search">
+		<label for="search"><slot name="label">Search</slot></label>
+		<input id="search">
+		<p id="values"></p>
 	
 	<!-- results scrolling controls at top -->
-	<div class="scroll">  
-	  <a href="#" rel="prev" class="prev">
-	    <slot name="prev">&lt;&lt;</slot>
-	  </a>
-	  <a href="#" rel="next" class="next">
-	    <slot name="next">&gt;&gt;</slot>
-	  </a>
-	</div>
+		<div class="scroll">  
+	  	<a href="#" rel="prev" class="prev">
+	    	<slot name="prev">&lt;&lt;</slot>
+	  	</a>
+	  	<a href="#" rel="next" class="next">
+	    	<slot name="next">&gt;&gt;</slot>
+	  	</a>
+		</div>
 
 	<!-- results list -->
-	<ul id="results">
+		<ul id="results">
 	  <!-- each result should be inserted into a node like the following -->
-	  <li class="result">
-	    <div class="delete">
-              <a href="#"><span class="material-icons md-48">delete</span></a>
-	    </div>
-	  </li>
-	</ul>
+	  		<li class="result">
+	    		<div class="delete">
+              		<a href="#"><span class="material-icons md-48">delete</span></a>
+	    		</div>
+	  		</li>
+		</ul>
 
 	<!-- results scrolling control at bottom -->
-	<div class="scroll">
-	  <a href="#" rel="prev" class="prev">
-	    <slot name="prev">&lt;&lt;</slot>
-	  </a>
-	  <a href="#" rel="next" class="next">
-	    <slot name="next">&gt;&gt;</slot>
-	  </a>
-	</div>
-      </div>
+		<div class="scroll">
+	  		<a href="#" rel="prev" class="prev">
+	    		<slot name="prev">&lt;&lt;</slot>
+	  		</a>
+	  		<a href="#" rel="next" class="next">
+	    		<slot name="next">&gt;&gt;</slot>
+	  		</a>
+		</div>
+    	</div>
       
     </template>
     

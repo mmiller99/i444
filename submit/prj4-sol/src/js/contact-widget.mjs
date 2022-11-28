@@ -46,11 +46,11 @@ class ContactWidget extends HTMLElement {
     const addrKeys = ['addrLine1', 'addrLine2', 'city', 'state', 'zip'];
     for (const [k1, v1] of addrKeys.map(k => [k, addr[k]])) {
       if (v1 === undefined) {
-	shadow.querySelectorAll(`.${k1}`)
-	  .forEach(e => e.style.display = 'none');
+	      shadow.querySelectorAll(`.${k1}`)
+	        .forEach(e => e.style.display = 'none');
       }
       else {
-	this.shadow.querySelector(`dd.${k1}`).innerHTML = v1;
+	      this.shadow.querySelector(`dd.${k1}`).innerHTML = v1;
       }
     }
   }
