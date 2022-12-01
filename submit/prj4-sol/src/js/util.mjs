@@ -14,17 +14,18 @@ import { Result, okResult, errResult } from 'cs544-js-utils';
  */
 export async function doFetchJson(method, url, jsonBody=undefined) {
   //TODO
+  const parameters = {method};
+  if(jsonBody){
+    parameters.headers = { 'Content-Type': 'application/json' }
+    parameters.body = JSON.stringify(jsonBody);
+  }
   try{
-    const response = await fetch(url, {
-      method: method,
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(jsonBody)});
-    if(response.content-length !== 0){
+    const response = await fetch(url, parameters);
+  
+    if(response.headers.get('content-length') !== 0){
       const data = await response.json();
       if(data.errors){
-        return errResult({status: 400, errors: [{ message: "Could not retrieve data"}]});
+        return new Result(null, data.errors);
       }
       else{
         return okResult(data);
