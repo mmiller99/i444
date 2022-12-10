@@ -20,10 +20,12 @@ export default function serve(model, base='') {
 }
 
 
+const EXPOSED_HEADERS = [ 'Location', 'Content-Type', 'Content-Length' ];
+
 /** set up mapping between URL routes and handlers */
 function setupRoutes(app) {
   const base = app.locals.base;
-  app.use(cors({ exposedHeaders: [ 'Location' ]}));
+  app.use(cors({ exposedHeaders: EXPOSED_HEADERS}));
   app.use(bodyParser.json());
   if (false) { //make true to see incoming requests
     app.use((req, res, next) => {
@@ -32,13 +34,11 @@ function setupRoutes(app) {
     });
   }
 
-  //TODO: add routes here
-
-  app.get(`${base}/contacts/:userId/:contactId`, doQueryContact(app));
-  //app.get(`${base}/contacts/:userId`, doQueryUser(app));
-  //app.post(`${base}/contacts/:userId`, doCreateConctact(app));
-  //app.patch(`${base}/contacts/:userId/:contactId`, doUpdateContact(app));
-  //app.delete(`${base}/contacts/:userId/:contactId`, doDeleteContact(app));
+  app.post(`${base}/:userId`, doContactCreate(app));
+  app.get(`${base}/:userId/:id`, doContactGet(app));
+  app.patch(`${base}/:userId/:id`, doContactUpdate(app));
+  app.delete(`${base}/:userId/:id`, doContactDelete(app));
+  app.get(`${base}/:userId`, doContactsSearch(app));
 
   //must be last
   app.use(do404(app));
@@ -47,25 +47,91 @@ function setupRoutes(app) {
 
 /****************************** Route Handlers *************************/
 
-//TODO: add route handlers
-
-function doQueryContact(app){
-  return async function(req, res){
-  try{
-    const result = await app.locals.model.get(req.params);
-    if(result.hasErrors) throw result;
-    const userId = result.val.userId;
-    const contactId = result.val.contactId;
-    res.location(`${userId}/${contactId}`);
-    res.json(addSelfLinks(req, result.val, userId));
-  }
-  catch(err){
-    const mapped = mapResultErrors(err);
-    res.status(mapped.status).json(mapped);
-  }
-  }
-
+function doContactCreate(app) {
+  return (async function(req, res) {
+    try {
+      const {userId} = req.params;
+      const obj = req.body;
+      const contactIdResult = await app.locals.model.create({userId, ...obj});
+      if (contactIdResult.errors) throw contactIdResult;
+      const location = requestUrl(req) + '/' + contactIdResult.val;
+      res.append('Location', location);
+      res.sendStatus(STATUS.CREATED);
+    }
+    catch(err) {
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
 }
+
+function doContactGet(app) {
+  return (async function(req, res) {
+    try {
+      const { userId, id } = req.params;
+      const contactResult = await app.locals.model.read({ userId, id });
+      if (contactResult.errors) throw contactResult;
+      res.json(addSelfLinks(req, contactResult.val));
+    }
+    catch(err) {
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+}
+
+function doContactUpdate(app) {
+  return (async function(req, res) {
+    try {
+      const { userId, id } = req.params;
+      const body = req.body;
+      const contact = await app.locals.model.update({ ...body, userId, id });
+      if (contact.errors) throw contact;
+      res.json(addSelfLinks(req, contact.val));
+    }
+    catch(err) {
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+}
+
+function doContactDelete(app) {
+  return (async function(req, res) {
+    try {
+      const { userId, id } = req.params;
+      const contact = await app.locals.model.delete({ userId, id });
+      if (contact.errors) throw contact;
+      res.status(STATUS.NO_CONTENT).end();
+    }
+    catch(err) {
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+}
+
+function doContactsSearch(app) {
+  return (async function(req, res) {
+    try {
+      const {userId, id} = req.params;
+      const q = { ...(req.query ?? {}), userId, id, };
+      const index = getNonNegInt(q, 'index', 0);
+      if (index.errors) throw index;
+      const count = getNonNegInt(q, 'count', DEFAULT_COUNT);
+      if (count.errors) throw count;
+      const options = { index, count: count + 1 };
+      const result = await app.locals.model.search({...q, ...options});
+      if (result.errors) throw result;
+      res.json(addPagingLinks(req, result.val, 'id'));
+    }
+    catch (err) {
+      const mapped = mapResultErrors(err);
+      res.status(mapped.status).json(mapped);
+    }
+  });
+}
+
 
 /** Default handler for when there is no route for a particular method
  *  and path.
@@ -228,4 +294,3 @@ function cdThisDir() {
     process.exit(1);
   }
 }
-
