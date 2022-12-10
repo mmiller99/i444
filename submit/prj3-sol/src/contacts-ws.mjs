@@ -8,6 +8,7 @@ import bodyParser from 'body-parser';
 import { okResult, errResult } from 'cs544-js-utils';
 
 import { DEFAULT_COUNT } from './defs.mjs';
+import { STATUS_CODES } from 'http';
 
 export default function serve(model, base='') {
   const app = express();
@@ -34,11 +35,13 @@ function setupRoutes(app) {
     });
   }
 
+
   app.post(`${base}/:userId`, doContactCreate(app));
   app.get(`${base}/:userId/:id`, doContactGet(app));
   app.patch(`${base}/:userId/:id`, doContactUpdate(app));
   app.delete(`${base}/:userId/:id`, doContactDelete(app));
   app.get(`${base}/:userId`, doContactsSearch(app));
+
 
   //must be last
   app.use(do404(app));
@@ -74,11 +77,13 @@ function doContactGet(app) {
       res.json(addSelfLinks(req, contactResult.val));
     }
     catch(err) {
+
       const mapped = mapResultErrors(err);
       res.status(mapped.status).json(mapped);
     }
   });
 }
+
 
 function doContactUpdate(app) {
   return (async function(req, res) {
@@ -96,6 +101,7 @@ function doContactUpdate(app) {
   });
 }
 
+
 function doContactDelete(app) {
   return (async function(req, res) {
     try {
@@ -105,6 +111,7 @@ function doContactDelete(app) {
       res.status(STATUS.NO_CONTENT).end();
     }
     catch(err) {
+
       const mapped = mapResultErrors(err);
       res.status(mapped.status).json(mapped);
     }
@@ -168,6 +175,10 @@ function doErrors(app) {
 function requestUrl(req) {
   const url = req.originalUrl.replace(/\/?(\?.*)?$/, '');
   return `${req.protocol}://${req.get('host')}${url}`;
+}
+
+function selfResult(req, result, method=undefined){
+  return { result, _links: { self: { href: queryUrl(req), method } } };
 }
 
 /** Return req URL with query params appended */

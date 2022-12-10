@@ -16,7 +16,7 @@ export default class {
     dao._mongod = mongod;
     return dao;
   }
-
+  
   static async tearDown(dao) {
     await dao.close();
     await dao._mongod.stop();
